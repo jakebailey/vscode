@@ -59,7 +59,8 @@
 			"label": "VS Code - Build",
 			"dependsOn": [
 				"Core - Build",
-				"Ext - Build"
+				"Ext - Build",
+				"Web Ext - Build"
 			],
 			"group": {
 				"kind": "build",
@@ -95,7 +96,8 @@
 			"label": "Kill VS Code - Build",
 			"dependsOn": [
 				"Kill Core - Build",
-				"Kill Ext - Build"
+				"Kill Ext - Build",
+				"Kill Web Ext - Build"
 			],
 			"group": "build",
 			"problemMatcher": []
@@ -107,7 +109,8 @@
 			"group": "build",
 			"isBackground": true,
 			"presentation": {
-				"reveal": "never"
+				"reveal": "never",
+				"group": "buildWatchers"
 			},
 			"problemMatcher": {
 				"owner": "typescript",
@@ -171,7 +174,7 @@
 		},
 		{
 			"type": "shell",
-			"command": "yarn web --no-launch",
+			"command": "yarn web --no-launch --extension <path to extension>",
 			"label": "Run web",
 			"isBackground": true,
 			"problemMatcher": {
