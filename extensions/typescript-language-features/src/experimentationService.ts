@@ -10,6 +10,7 @@ import { IExperimentationTelemetryReporter } from './experimentTelemetryReporter
 
 interface ExperimentTypes {
 	suggestNativePreview: boolean;
+	useNativePreviewByDefault: boolean;
 }
 
 export class ExperimentationService {

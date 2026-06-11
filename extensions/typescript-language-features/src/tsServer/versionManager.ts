@@ -6,13 +6,13 @@
 import * as vscode from 'vscode';
 import { TypeScriptServiceConfiguration } from '../configuration/configuration';
 import { getTsNativeExtension } from '../commands/useTsgo';
-import { readUnifiedConfig, unifiedConfigSection } from '../utils/configuration';
+import { readLanguageServerPreference, useWorkspaceTsdkStorageKey } from './serverSelection';
+import { unifiedConfigSection } from '../utils/configuration';
 import { setImmediate } from '../utils/async';
 import { Disposable } from '../utils/dispose';
 import { ITypeScriptVersionProvider, TypeScriptVersion } from './versionProvider';
 
 
-const useWorkspaceTsdkStorageKey = 'typescript.useWorkspaceTsdk';
 const suppressPromptWorkspaceTsdkStorageKey = 'typescript.suppressPromptWorkspaceTsdk';
 
 interface QuickPickItem extends vscode.QuickPickItem {
@@ -146,13 +146,13 @@ export class TypeScriptVersionManager extends Disposable {
 			return undefined;
 		}
 
-		const isUsingTsgo = readUnifiedConfig<boolean>('experimental.useTsgo', false, { fallbackSection: 'typescript' });
+		const isUsingTsgo = readLanguageServerPreference() === 'preferLsp';
 
 		return {
 			label: (isUsingTsgo ? '• ' : '') + vscode.l10n.t("Use TypeScript Native Preview (Experimental)"),
 			description: nativePreviewExtension.packageJSON.version,
 			run: async () => {
-				await vscode.commands.executeCommand('typescript.native-preview.enable');
+				await vscode.workspace.getConfiguration(unifiedConfigSection).update('languageServer.preference', 'preferLsp', vscode.ConfigurationTarget.Global);
 			},
 		};
 	}

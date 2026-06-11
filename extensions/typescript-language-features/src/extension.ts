@@ -8,7 +8,8 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Api, getExtensionApi } from './api';
 import { CommandManager } from './commands/commandManager';
-import { DisableTsgoCommand, tsNativeExtensionIds } from './commands/useTsgo';
+import { SelectTypeScriptVersionCommand } from './commands/selectTypeScriptVersion';
+import { DisableTsgoCommand } from './commands/useTsgo';
 import { registerBaseCommands } from './commands/index';
 import { ElectronServiceConfigurationProvider } from './configuration/configuration.electron';
 import { ExperimentationTelemetryReporter, IExperimentationTelemetryReporter } from './experimentTelemetryReporter';
@@ -26,8 +27,10 @@ import { onCaseInsensitiveFileSystem } from './utils/fs.electron';
 import { Lazy } from './utils/lazy';
 import { getPackageInfo } from './utils/packageInfo';
 import * as temp from './utils/temp.electron';
-import { conditionalRegistration, requireGlobalUnifiedConfig, requireHasVsCodeExtension } from './languageFeatures/util/dependentRegistration';
+import { Condition, conditionalRegistration } from './languageFeatures/util/dependentRegistration';
 import { DisposableStore } from './utils/dispose';
+import { JsTsServerSelectionService } from './tsServer/serverSelection';
+import { JsTsServerKind } from './tsServer/serverSelectionTypes';
 
 export function activate(
 	context: vscode.ExtensionContext
@@ -40,6 +43,9 @@ export function activate(
 
 	const logDirectoryProvider = new NodeLogDirectoryProvider(context);
 	const versionProvider = new DiskTypeScriptVersionProvider();
+	let autoServerKind: JsTsServerKind = 'tsserver';
+	const serverSelectionService = new JsTsServerSelectionService(context.workspaceState, () => autoServerKind);
+	context.subscriptions.push(serverSelectionService);
 
 	let experimentTelemetryReporter: IExperimentationTelemetryReporter | undefined;
 	const packageInfo = getPackageInfo(context);
@@ -51,6 +57,10 @@ export function activate(
 
 		const experimentationService = new ExperimentationService(experimentTelemetryReporter, id, version, context.globalState);
 		suggestNativePreview(context, experimentationService);
+		void experimentationService.getTreatmentVariable('useNativePreviewByDefault', false).then(useNativePreviewByDefault => {
+			autoServerKind = useNativePreviewByDefault ? 'lsp' : 'tsserver';
+			serverSelectionService.update();
+		});
 	}
 
 	// Register features that work in both TSGO and non-TSGO modes
@@ -58,15 +68,18 @@ export function activate(
 		context.subscriptions.push(module.register());
 	});
 
-	// Conditionally register features based on whether TSGO is enabled
+	// Conditionally register features based on the resolved JS/TS language server.
 	context.subscriptions.push(conditionalRegistration([
-		requireGlobalUnifiedConfig('experimental.useTsgo', { fallbackSection: 'typescript' }),
-		requireHasVsCodeExtension(tsNativeExtensionIds),
+		new Condition(
+			() => serverSelectionService.selection.kind === 'lsp',
+			handler => serverSelectionService.onDidChangeSelection(handler)
+		),
 	], () => {
-		// TSGO. Only register a small set of features that don't use TS Server
+		// Native LSP. Only register a small set of features that don't use TS Server.
 		const disposables = new DisposableStore();
 
 		const commandManager = disposables.add(new CommandManager());
+		commandManager.register(new SelectTypeScriptVersionCommand(undefined, serverSelectionService));
 		commandManager.register(new DisableTsgoCommand());
 
 		return disposables;
@@ -86,6 +99,7 @@ export function activate(
 			processFactory: new ElectronServiceProcessFactory(),
 			activeJsTsEditorTracker,
 			serviceConfigurationProvider: new ElectronServiceConfigurationProvider(),
+			serverSelectionService,
 			experimentTelemetryReporter,
 			logger: new Logger(),
 		}, item => {
@@ -95,7 +109,7 @@ export function activate(
 		});
 
 		// Register features
-		registerBaseCommands(commandManager, lazyClientHost, pluginManager, activeJsTsEditorTracker);
+		registerBaseCommands(commandManager, lazyClientHost, pluginManager, activeJsTsEditorTracker, serverSelectionService);
 
 		import('./task/taskProvider').then(module => {
 			disposables.add(module.register(new Lazy(() => lazyClientHost.value.serviceClient)));
@@ -106,7 +120,7 @@ export function activate(
 		return disposables;
 	},));
 
-	return getExtensionApi(onCompletionAccepted.event, pluginManager);
+	return getExtensionApi(onCompletionAccepted.event, pluginManager, serverSelectionService);
 }
 
 export function deactivate() {

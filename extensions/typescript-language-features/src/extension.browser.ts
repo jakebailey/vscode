@@ -21,6 +21,7 @@ import { noopLogDirectoryProvider } from './tsServer/logDirectoryProvider';
 import { PluginManager } from './tsServer/plugins';
 import { WorkerServerProcessFactory } from './tsServer/serverProcess.browser';
 import { ITypeScriptVersionProvider, TypeScriptVersion, TypeScriptVersionSource } from './tsServer/versionProvider';
+import { IJsTsServerSelectionService, JsTsServerSelection, LanguageServerPreference } from './tsServer/serverSelectionTypes';
 import { ActiveJsTsEditorTracker } from './ui/activeJsTsEditorTracker';
 import { Disposable } from './utils/dispose';
 import { getPackageInfo } from './utils/packageInfo';
@@ -44,6 +45,23 @@ class StaticVersionProvider implements ITypeScriptVersionProvider {
 	readonly localVersions = [];
 }
 
+class BrowserServerSelectionService implements IJsTsServerSelectionService {
+	private readonly _onDidChangeSelection = new vscode.EventEmitter<JsTsServerSelection>();
+	readonly onDidChangeSelection = this._onDidChangeSelection.event;
+
+	readonly selection: JsTsServerSelection = {
+		kind: 'tsserver',
+		source: 'bundled',
+		tsdk: undefined,
+		preference: 'auto',
+		reason: 'browser',
+	};
+
+	async setPreference(_preference: LanguageServerPreference): Promise<void> {
+		// The browser extension always uses the web TypeScript server.
+	}
+}
+
 export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 	const pluginManager = new PluginManager();
 	context.subscriptions.push(pluginManager);
@@ -56,6 +74,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 
 	const activeJsTsEditorTracker = new ActiveJsTsEditorTracker();
 	context.subscriptions.push(activeJsTsEditorTracker);
+	const serverSelectionService = new BrowserServerSelectionService();
 
 	const versionProvider = new StaticVersionProvider(
 		new TypeScriptVersion(
@@ -89,7 +108,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 		onCompletionAccepted.fire(item);
 	});
 
-	registerBaseCommands(commandManager, lazyClientHost, pluginManager, activeJsTsEditorTracker);
+	registerBaseCommands(commandManager, lazyClientHost, pluginManager, activeJsTsEditorTracker, serverSelectionService);
 
 	// context.subscriptions.push(task.register(lazyClientHost.map(x => x.serviceClient)));
 
@@ -103,7 +122,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 
 	context.subscriptions.push(registerAtaSupport(logger));
 
-	return getExtensionApi(onCompletionAccepted.event, pluginManager);
+	return getExtensionApi(onCompletionAccepted.event, pluginManager, serverSelectionService);
 }
 
 async function startPreloadWorkspaceContentsIfNeeded(context: vscode.ExtensionContext, logger: Logger): Promise<void> {

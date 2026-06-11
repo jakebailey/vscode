@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import * as vscode from 'vscode';
+import { IJsTsServerSelectionService, LanguageServerPreference } from '../tsServer/serverSelectionTypes';
 import TypeScriptServiceClientHost from '../typeScriptServiceClientHost';
 import { Lazy } from '../utils/lazy';
 import { Command } from './commandManager';
@@ -12,10 +14,52 @@ export class SelectTypeScriptVersionCommand implements Command {
 	public readonly id = SelectTypeScriptVersionCommand.id;
 
 	public constructor(
-		private readonly lazyClientHost: Lazy<TypeScriptServiceClientHost>
+		private readonly lazyClientHost: Lazy<TypeScriptServiceClientHost> | undefined,
+		private readonly serverSelectionService?: IJsTsServerSelectionService,
 	) { }
 
-	public execute() {
-		this.lazyClientHost.value.serviceClient.showVersionPicker();
+	public async execute(): Promise<void> {
+		if (!this.serverSelectionService || this.serverSelectionService.selection.kind === 'tsserver') {
+			this.lazyClientHost?.value.serviceClient.showVersionPicker();
+			return;
+		}
+
+		await this.showServerPreferencePicker();
+	}
+
+	private async showServerPreferencePicker(): Promise<void> {
+		if (!this.serverSelectionService) {
+			return;
+		}
+
+		interface PreferencePick extends vscode.QuickPickItem {
+			readonly preference: LanguageServerPreference;
+		}
+
+		const currentPreference = this.serverSelectionService.selection.preference;
+		const items: PreferencePick[] = [
+			{
+				label: (currentPreference === 'auto' ? '• ' : '') + vscode.l10n.t("Use VS Code's Default"),
+				description: vscode.l10n.t("Auto"),
+				preference: 'auto',
+			},
+			{
+				label: (currentPreference === 'preferTsserver' ? '• ' : '') + vscode.l10n.t("Prefer TypeScript Server"),
+				description: vscode.l10n.t("Classic"),
+				preference: 'preferTsserver',
+			},
+			{
+				label: (currentPreference === 'preferLsp' ? '• ' : '') + vscode.l10n.t("Prefer Native TypeScript Server"),
+				description: vscode.l10n.t("Native"),
+				preference: 'preferLsp',
+			},
+		];
+
+		const selected = await vscode.window.showQuickPick(items, {
+			placeHolder: vscode.l10n.t("Select the TypeScript version used for JavaScript and TypeScript language features"),
+		});
+		if (selected) {
+			await this.serverSelectionService.setPreference(selected.preference);
+		}
 	}
 }

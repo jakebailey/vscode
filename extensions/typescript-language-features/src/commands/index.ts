@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { PluginManager } from '../tsServer/plugins';
+import { IJsTsServerSelectionService } from '../tsServer/serverSelectionTypes';
 import TypeScriptServiceClientHost from '../typeScriptServiceClientHost';
 import { ActiveJsTsEditorTracker } from '../ui/activeJsTsEditorTracker';
 import { Lazy } from '../utils/lazy';
@@ -24,10 +25,11 @@ export function registerBaseCommands(
 	lazyClientHost: Lazy<TypeScriptServiceClientHost>,
 	pluginManager: PluginManager,
 	activeJsTsEditorTracker: ActiveJsTsEditorTracker,
+	serverSelectionService: IJsTsServerSelectionService,
 ): void {
 	commandManager.register(new ReloadTypeScriptProjectsCommand(lazyClientHost));
 	commandManager.register(new ReloadJavaScriptProjectsCommand(lazyClientHost));
-	commandManager.register(new SelectTypeScriptVersionCommand(lazyClientHost));
+	commandManager.register(new SelectTypeScriptVersionCommand(lazyClientHost, serverSelectionService));
 	commandManager.register(new OpenTsServerLogCommand(lazyClientHost));
 	commandManager.register(new RestartTsServerCommand(lazyClientHost));
 	commandManager.register(new TypeScriptGoToProjectConfigCommand(activeJsTsEditorTracker, lazyClientHost));

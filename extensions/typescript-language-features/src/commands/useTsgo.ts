@@ -4,22 +4,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { readUnifiedConfig, unifiedConfigSection } from '../utils/configuration';
+import { readLanguageServerPreference } from '../tsServer/serverSelection';
+import { getTsNativeExtension, languageServerPreferenceConfig, tsNativeExtensionId } from '../tsServer/serverSelectionTypes';
+import { unifiedConfigSection } from '../utils/configuration';
 import { Command } from './commandManager';
 
-export const tsNativeExtensionOldId = 'typescriptteam.native-preview';
-export const tsNativeExtensionIds = ['typescriptteam.vscode-typescript', tsNativeExtensionOldId] as const;
-
-export function getTsNativeExtension(): vscode.Extension<unknown> | undefined {
-	for (const extensionId of tsNativeExtensionIds) {
-		const extension = vscode.extensions.getExtension(extensionId);
-		if (extension) {
-			return extension;
-		}
-	}
-
-	return undefined;
-}
+export { tsNativeExtensionId };
 
 export class EnableTsgoCommand implements Command {
 	public readonly id = 'typescript.experimental.enableTsgo';
@@ -58,19 +48,20 @@ async function updateTsgoSetting(enable: boolean): Promise<void> {
 		}
 	}
 
-	const currentValue = readUnifiedConfig<boolean>('experimental.useTsgo', false, { fallbackSection: 'typescript' });
-	if (currentValue === enable) {
+	const preference = enable ? 'preferLsp' : 'preferTsserver';
+	if (readLanguageServerPreference() === preference) {
 		return;
 	}
 
 	// Determine the target scope for the configuration update
 	let target = vscode.ConfigurationTarget.Global;
 	const unifiedConfig = vscode.workspace.getConfiguration(unifiedConfigSection);
+	const preferenceInspect = unifiedConfig.inspect<string>(languageServerPreferenceConfig);
 	const inspect = unifiedConfig.inspect<boolean>('experimental.useTsgo');
 	const legacyInspect = vscode.workspace.getConfiguration('typescript').inspect<boolean>('experimental.useTsgo');
-	if (inspect?.workspaceValue !== undefined || legacyInspect?.workspaceValue !== undefined) {
+	if (preferenceInspect?.workspaceValue !== undefined || inspect?.workspaceValue !== undefined || legacyInspect?.workspaceValue !== undefined) {
 		target = vscode.ConfigurationTarget.Workspace;
-	} else if (inspect?.workspaceFolderValue !== undefined || legacyInspect?.workspaceFolderValue !== undefined) {
+	} else if (preferenceInspect?.workspaceFolderValue !== undefined || inspect?.workspaceFolderValue !== undefined || legacyInspect?.workspaceFolderValue !== undefined) {
 		target = vscode.ConfigurationTarget.WorkspaceFolder;
 	} else {
 		// If setting is not defined yet, use the same scope as typescript-go.executablePath
@@ -84,5 +75,5 @@ async function updateTsgoSetting(enable: boolean): Promise<void> {
 		}
 	}
 
-	await unifiedConfig.update('experimental.useTsgo', enable, target);
+	await unifiedConfig.update(languageServerPreferenceConfig, preference, target);
 }

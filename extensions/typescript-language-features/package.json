@@ -185,6 +185,7 @@
             "type": "boolean",
             "default": false,
             "markdownDescription": "%typescript.useTsgo%",
+            "markdownDeprecationMessage": "%typescript.useTsgo.preferenceDeprecationMessage%",
             "scope": "window",
             "order": 2,
             "keywords": [
@@ -196,10 +197,31 @@
             "type": "boolean",
             "default": false,
             "markdownDescription": "%typescript.useTsgo%",
-            "markdownDeprecationMessage": "%typescript.useTsgo.unifiedDeprecationMessage%",
+            "markdownDeprecationMessage": "%typescript.useTsgo.preferenceDeprecationMessage%",
             "scope": "window",
             "order": 2,
             "keywords": [
+              "experimental"
+            ]
+          },
+          "js/ts.languageServer.preference": {
+            "type": "string",
+            "default": "auto",
+            "enum": [
+              "auto",
+              "preferTsserver",
+              "preferLsp"
+            ],
+            "markdownEnumDescriptions": [
+              "%typescript.languageServer.preference.auto%",
+              "%typescript.languageServer.preference.preferTsserver%",
+              "%typescript.languageServer.preference.preferLsp%"
+            ],
+            "markdownDescription": "%typescript.languageServer.preference%",
+            "scope": "window",
+            "order": 3,
+            "keywords": [
+              "TypeScript",
               "experimental"
             ]
           },
@@ -234,7 +256,7 @@
             ],
             "markdownDescription": "%typescript.locale%",
             "scope": "window",
-            "order": 3,
+            "order": 4,
             "keywords": [
               "TypeScript"
             ]
@@ -271,7 +293,7 @@
             "markdownDescription": "%typescript.locale%",
             "markdownDeprecationMessage": "%typescript.locale.unifiedDeprecationMessage%",
             "scope": "window",
-            "order": 3
+            "order": 4
           },
           "js/ts.tsc.autoDetect": {
             "type": "string",
@@ -290,7 +312,7 @@
             ],
             "description": "%typescript.tsc.autoDetect%",
             "scope": "window",
-            "order": 4,
+            "order": 5,
             "keywords": [
               "TypeScript"
             ]
@@ -313,7 +335,7 @@
             "description": "%typescript.tsc.autoDetect%",
             "markdownDeprecationMessage": "%typescript.tsc.autoDetect.unifiedDeprecationMessage%",
             "scope": "window",
-            "order": 4
+            "order": 5
           }
         }
       },
@@ -2893,37 +2915,37 @@
         "command": "typescript.sortImports",
         "title": "%typescript.sortImports%",
         "category": "TypeScript",
-        "enablement": "!config.js/ts.experimental.useTsgo && !config.typescript.experimental.useTsgo && typescript.isManagedFile"
+        "enablement": "typescript.serverKind == tsserver && typescript.isManagedFile"
       },
       {
         "command": "javascript.sortImports",
         "title": "%typescript.sortImports%",
         "category": "JavaScript",
-        "enablement": "!config.js/ts.experimental.useTsgo && !config.typescript.experimental.useTsgo && typescript.isManagedFile"
+        "enablement": "typescript.serverKind == tsserver && typescript.isManagedFile"
       },
       {
         "command": "typescript.removeUnusedImports",
         "title": "%typescript.removeUnusedImports%",
         "category": "TypeScript",
-        "enablement": "!config.js/ts.experimental.useTsgo && !config.typescript.experimental.useTsgo && typescript.isManagedFile"
+        "enablement": "typescript.serverKind == tsserver && typescript.isManagedFile"
       },
       {
         "command": "javascript.removeUnusedImports",
         "title": "%typescript.removeUnusedImports%",
         "category": "JavaScript",
-        "enablement": "!config.js/ts.experimental.useTsgo && !config.typescript.experimental.useTsgo && typescript.isManagedFile"
+        "enablement": "typescript.serverKind == tsserver && typescript.isManagedFile"
       },
       {
         "command": "typescript.experimental.enableTsgo",
         "title": "Use TypeScript Go (Experimental)",
         "category": "TypeScript",
-        "enablement": "!config.js/ts.experimental.useTsgo && !config.typescript.experimental.useTsgo && config.typescript-go.executablePath"
+        "enablement": "typescript.serverKind != lsp"
       },
       {
         "command": "typescript.experimental.disableTsgo",
         "title": "Stop using TypeScript Go (Experimental)",
         "category": "TypeScript",
-        "enablement": "config.js/ts.experimental.useTsgo || config.typescript.experimental.useTsgo"
+        "enablement": "typescript.serverKind == lsp"
       }
     ],
     "menus": {
@@ -2982,25 +3004,25 @@
         },
         {
           "command": "typescript.sortImports",
-          "when": "!config.js/ts.experimental.useTsgo && !config.typescript.experimental.useTsgo && typescript.isManagedFile && supportedCodeAction =~ /(\\s|^)source\\.sortImports\\b/ && editorLangId =~ /^typescript(react)?$/"
+          "when": "typescript.serverKind == tsserver && typescript.isManagedFile && supportedCodeAction =~ /(\\s|^)source\\.sortImports\\b/ && editorLangId =~ /^typescript(react)?$/"
         },
         {
           "command": "javascript.sortImports",
-          "when": "!config.js/ts.experimental.useTsgo && !config.typescript.experimental.useTsgo && typescript.isManagedFile && supportedCodeAction =~ /(\\s|^)source\\.sortImports\\b/ && editorLangId =~ /^javascript(react)?$/"
+          "when": "typescript.serverKind == tsserver && typescript.isManagedFile && supportedCodeAction =~ /(\\s|^)source\\.sortImports\\b/ && editorLangId =~ /^javascript(react)?$/"
         },
         {
           "command": "typescript.removeUnusedImports",
-          "when": "!config.js/ts.experimental.useTsgo && !config.typescript.experimental.useTsgo && typescript.isManagedFile && supportedCodeAction =~ /(\\s|^)source\\.removeUnusedImports\\b/ && editorLangId =~ /^typescript(react)?$/"
+          "when": "typescript.serverKind == tsserver && typescript.isManagedFile && supportedCodeAction =~ /(\\s|^)source\\.removeUnusedImports\\b/ && editorLangId =~ /^typescript(react)?$/"
         },
         {
           "command": "javascript.removeUnusedImports",
-          "when": "!config.js/ts.experimental.useTsgo && !config.typescript.experimental.useTsgo && typescript.isManagedFile && supportedCodeAction =~ /(\\s|^)source\\.removeUnusedImports\\b/ && editorLangId =~ /^javascript(react)?$/"
+          "when": "typescript.serverKind == tsserver && typescript.isManagedFile && supportedCodeAction =~ /(\\s|^)source\\.removeUnusedImports\\b/ && editorLangId =~ /^javascript(react)?$/"
         }
       ],
       "editor/context": [
         {
           "command": "typescript.goToSourceDefinition",
-          "when": "!config.js/ts.experimental.useTsgo && !config.typescript.experimental.useTsgo && tsSupportsSourceDefinition && (resourceLangId == typescript || resourceLangId == typescriptreact || resourceLangId == javascript || resourceLangId == javascriptreact)",
+          "when": "typescript.serverKind == tsserver && tsSupportsSourceDefinition && (resourceLangId == typescript || resourceLangId == typescriptreact || resourceLangId == javascript || resourceLangId == javascriptreact)",
           "group": "navigation@1.41"
         }
       ],
