@@ -5,8 +5,7 @@
 
 import * as vscode from 'vscode';
 import { TypeScriptServiceConfiguration } from '../configuration/configuration';
-import { getTsNativeExtension } from '../commands/useTsgo';
-import { readLanguageServerPreference, useWorkspaceTsdkStorageKey } from './serverSelection';
+import { getTsNativeExtension, readLanguageServerPreference, useWorkspaceTsdkStorageKey } from './serverSelectionTypes';
 import { unifiedConfigSection } from '../utils/configuration';
 import { setImmediate } from '../utils/async';
 import { Disposable } from '../utils/dispose';

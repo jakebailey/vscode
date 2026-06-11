@@ -60,6 +60,10 @@ class BrowserServerSelectionService implements IJsTsServerSelectionService {
 	async setPreference(_preference: LanguageServerPreference): Promise<void> {
 		// The browser extension always uses the web TypeScript server.
 	}
+
+	update(): void {
+		void vscode.commands.executeCommand('setContext', 'typescript.serverKind', this.selection.kind);
+	}
 }
 
 export async function activate(context: vscode.ExtensionContext): Promise<Api> {
@@ -75,6 +79,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 	const activeJsTsEditorTracker = new ActiveJsTsEditorTracker();
 	context.subscriptions.push(activeJsTsEditorTracker);
 	const serverSelectionService = new BrowserServerSelectionService();
+	serverSelectionService.update();
 
 	const versionProvider = new StaticVersionProvider(
 		new TypeScriptVersion(
@@ -102,6 +107,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 		processFactory: new WorkerServerProcessFactory(context.extensionUri, logger),
 		activeJsTsEditorTracker,
 		serviceConfigurationProvider: new BrowserServiceConfigurationProvider(),
+		serverSelectionService,
 		experimentTelemetryReporter,
 		logger,
 	}, item => {

@@ -19,6 +19,7 @@ import { standardLanguageDescriptions, isJsConfigOrTsConfigFileName } from './co
 import { Lazy } from './utils/lazy';
 import { Logger } from './logging/logger';
 import { PluginManager } from './tsServer/plugins';
+import { IJsTsServerSelectionService } from './tsServer/serverSelectionTypes';
 
 export function createLazyClientHost(
 	context: vscode.ExtensionContext,
@@ -32,6 +33,7 @@ export function createLazyClientHost(
 		processFactory: TsServerProcessFactory;
 		activeJsTsEditorTracker: ActiveJsTsEditorTracker;
 		serviceConfigurationProvider: ServiceConfigurationProvider;
+		serverSelectionService: IJsTsServerSelectionService;
 		experimentTelemetryReporter: IExperimentationTelemetryReporter | undefined;
 		logger: Logger;
 	},

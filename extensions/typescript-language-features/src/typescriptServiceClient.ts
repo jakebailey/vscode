@@ -25,6 +25,7 @@ import * as Proto from './tsServer/protocol/protocol';
 import { EventName } from './tsServer/protocol/protocol.const';
 import { ITypeScriptServer, TsServerLog, TsServerProcessFactory, TypeScriptServerExitEvent } from './tsServer/server';
 import { TypeScriptServerError } from './tsServer/serverError';
+import { IJsTsServerSelectionService } from './tsServer/serverSelectionTypes';
 import { TypeScriptServerSpawner } from './tsServer/spawner';
 import { TypeScriptVersionManager } from './tsServer/versionManager';
 import { ITypeScriptVersionProvider, TypeScriptVersion } from './tsServer/versionProvider';
@@ -149,6 +150,7 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 			versionProvider: ITypeScriptVersionProvider;
 			processFactory: TsServerProcessFactory;
 			serviceConfigurationProvider: ServiceConfigurationProvider;
+			serverSelectionService: IJsTsServerSelectionService;
 			experimentTelemetryReporter: IExperimentationTelemetryReporter | undefined;
 			logger: Logger;
 		},
@@ -185,6 +187,7 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 		this.pluginPathsProvider = new TypeScriptPluginPathsProvider(this._configuration);
 		this._versionManager = this._register(new TypeScriptVersionManager(this._configuration, this.versionProvider, context.workspaceState));
 		this._register(this._versionManager.onDidPickNewVersion(() => {
+			services.serverSelectionService.update();
 			this.restartTsServer();
 		}));
 

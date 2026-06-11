@@ -4,9 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import { readUnifiedConfig } from '../utils/configuration';
 
 export const tsNativeExtensionId = 'typescriptteam.native-preview';
 export const languageServerPreferenceConfig = 'languageServer.preference';
+export const useWorkspaceTsdkStorageKey = 'typescript.useWorkspaceTsdk';
 
 export type LanguageServerPreference = 'auto' | 'preferTsserver' | 'preferLsp';
 export type JsTsServerKind = 'tsserver' | 'lsp';
@@ -23,5 +25,14 @@ export interface JsTsServerSelection {
 export interface IJsTsServerSelectionService {
 	readonly selection: JsTsServerSelection;
 	readonly onDidChangeSelection: vscode.Event<JsTsServerSelection>;
+	update(): void;
 	setPreference(preference: LanguageServerPreference): Thenable<void>;
+}
+
+export function readLanguageServerPreference(): LanguageServerPreference {
+	const preference = readUnifiedConfig<LanguageServerPreference>(languageServerPreferenceConfig, 'auto', { fallbackSection: 'typescript' });
+	if (preference === 'auto' || preference === 'preferTsserver' || preference === 'preferLsp') {
+		return preference;
+	}
+	return 'auto';
 }

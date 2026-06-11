@@ -10,9 +10,7 @@ import * as vscode from 'vscode';
 import { hasModifiedUnifiedConfig, readUnifiedConfig, unifiedConfigSection } from '../utils/configuration';
 import { Disposable } from '../utils/dispose';
 import { RelativeWorkspacePathResolver } from '../utils/relativePathResolver';
-import { IJsTsServerSelectionService, JsTsServerKind, JsTsServerSelection, LanguageServerPreference, languageServerPreferenceConfig, tsNativeExtensionId } from './serverSelectionTypes';
-
-export const useWorkspaceTsdkStorageKey = 'typescript.useWorkspaceTsdk';
+import { IJsTsServerSelectionService, JsTsServerKind, JsTsServerSelection, LanguageServerPreference, languageServerPreferenceConfig, readLanguageServerPreference, tsNativeExtensionId, useWorkspaceTsdkStorageKey } from './serverSelectionTypes';
 
 interface TsdkCandidate {
 	readonly source: 'user' | 'workspace';
@@ -64,7 +62,14 @@ export class JsTsServerSelectionService extends Disposable implements IJsTsServe
 	}
 
 	public async setPreference(preference: LanguageServerPreference): Promise<void> {
-		await vscode.workspace.getConfiguration(unifiedConfigSection).update(languageServerPreferenceConfig, preference, vscode.ConfigurationTarget.Global);
+		const configuration = vscode.workspace.getConfiguration(unifiedConfigSection);
+		const inspect = configuration.inspect<LanguageServerPreference>(languageServerPreferenceConfig);
+		const target = inspect?.workspaceFolderValue !== undefined
+			? vscode.ConfigurationTarget.WorkspaceFolder
+			: inspect?.workspaceValue !== undefined
+				? vscode.ConfigurationTarget.Workspace
+				: vscode.ConfigurationTarget.Global;
+		await configuration.update(languageServerPreferenceConfig, preference, target);
 	}
 
 	private updateContext(): void {
@@ -108,14 +113,6 @@ export function resolveJsTsServerSelection(
 		preference,
 		reason: preference === 'auto' ? 'auto' : preference,
 	};
-}
-
-export function readLanguageServerPreference(): LanguageServerPreference {
-	const preference = readUnifiedConfig<LanguageServerPreference>(languageServerPreferenceConfig, 'auto', { fallbackSection: 'typescript' });
-	if (preference === 'auto' || preference === 'preferTsserver' || preference === 'preferLsp') {
-		return preference;
-	}
-	return 'auto';
 }
 
 function resolveBundledServerKind(
@@ -200,8 +197,17 @@ function fixPathPrefixes(inspectValue: string): string {
 }
 
 export function classifyTsdk(tsdkPath: string): JsTsServerKind | undefined {
-	const absolutePath = resolveTsdkPath(tsdkPath);
+	for (const absolutePath of resolveTsdkPaths(tsdkPath)) {
+		const kind = classifyAbsoluteTsdk(absolutePath);
+		if (kind) {
+			return kind;
+		}
+	}
 
+	return undefined;
+}
+
+function classifyAbsoluteTsdk(absolutePath: string): JsTsServerKind | undefined {
 	if (fs.existsSync(path.join(absolutePath, 'tsserver.js'))) {
 		return 'tsserver';
 	}
@@ -223,16 +229,25 @@ export function classifyTsdk(tsdkPath: string): JsTsServerKind | undefined {
 }
 
 export function resolveTsdkPath(tsdkPath: string): string {
+	return resolveTsdkPaths(tsdkPath)[0];
+}
+
+function resolveTsdkPaths(tsdkPath: string): readonly string[] {
 	if (path.isAbsolute(tsdkPath)) {
-		return path.normalize(tsdkPath);
+		return [path.normalize(tsdkPath)];
 	}
 
 	const workspacePath = RelativeWorkspacePathResolver.asAbsoluteWorkspacePath(tsdkPath);
 	if (workspacePath !== undefined) {
-		return path.normalize(workspacePath);
+		return [path.normalize(workspacePath)];
 	}
 
-	return path.normalize(tsdkPath);
+	const workspaceFolders = vscode.workspace.workspaceFolders;
+	if (workspaceFolders?.length) {
+		return workspaceFolders.map(folder => path.normalize(path.join(folder.uri.fsPath, tsdkPath)));
+	}
+
+	return [path.normalize(tsdkPath)];
 }
 
 function resolveTsgoPath(tsdkPath: string): string | undefined {

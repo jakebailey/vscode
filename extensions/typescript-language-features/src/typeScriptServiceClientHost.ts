@@ -22,6 +22,7 @@ import { Logger } from './logging/logger';
 import { OngoingRequestCancellerFactory } from './tsServer/cancellation';
 import { ILogDirectoryProvider } from './tsServer/logDirectoryProvider';
 import { PluginManager } from './tsServer/plugins';
+import { IJsTsServerSelectionService } from './tsServer/serverSelectionTypes';
 import * as errorCodes from './tsServer/protocol/errorCodes';
 import * as Proto from './tsServer/protocol/protocol';
 import * as PConst from './tsServer/protocol/protocol.const';
@@ -75,6 +76,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
 			processFactory: TsServerProcessFactory;
 			activeJsTsEditorTracker: ActiveJsTsEditorTracker;
 			serviceConfigurationProvider: ServiceConfigurationProvider;
+			serverSelectionService: IJsTsServerSelectionService;
 			experimentTelemetryReporter: IExperimentationTelemetryReporter | undefined;
 			logger: Logger;
 		},

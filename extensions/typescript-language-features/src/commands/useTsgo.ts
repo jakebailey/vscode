@@ -4,8 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { readLanguageServerPreference } from '../tsServer/serverSelection';
-import { getTsNativeExtension, languageServerPreferenceConfig, tsNativeExtensionId } from '../tsServer/serverSelectionTypes';
+import { getTsNativeExtension, languageServerPreferenceConfig, readLanguageServerPreference, tsNativeExtensionId } from '../tsServer/serverSelectionTypes';
 import { unifiedConfigSection } from '../utils/configuration';
 import { Command } from './commandManager';
 
