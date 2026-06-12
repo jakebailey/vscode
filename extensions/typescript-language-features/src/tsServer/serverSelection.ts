@@ -10,7 +10,7 @@ import * as vscode from 'vscode';
 import { hasModifiedUnifiedConfig, readUnifiedConfig, unifiedConfigSection } from '../utils/configuration';
 import { Disposable } from '../utils/dispose';
 import { RelativeWorkspacePathResolver } from '../utils/relativePathResolver';
-import { IJsTsServerSelectionService, JsTsServerKind, JsTsServerSelection, LanguageServerPreference, languageServerPreferenceConfig, readLanguageServerPreference, tsNativeExtensionId, useWorkspaceTsdkStorageKey } from './serverSelectionTypes';
+import { getTsNativeExtension, IJsTsServerSelectionService, JsTsServerKind, JsTsServerSelection, LanguageServerPreference, languageServerPreferenceConfig, readLanguageServerPreference, useWorkspaceTsdkStorageKey } from './serverSelectionTypes';
 
 interface TsdkCandidate {
 	readonly source: 'user' | 'workspace';
@@ -135,7 +135,7 @@ function resolveBundledServerKind(
 }
 
 function hasNativePreviewExtension(): boolean {
-	return !!vscode.extensions.getExtension(tsNativeExtensionId);
+	return !!getTsNativeExtension();
 }
 
 function readLegacyUseTsgo(): boolean | undefined {
