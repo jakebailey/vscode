@@ -38,6 +38,16 @@ export function getEffectiveTsNativeExtension(): vscode.Extension<unknown> | und
 	return vscode.extensions.getExtension(tsNativeNightlyExtensionId) ?? vscode.extensions.getExtension(tsNativeExtensionId);
 }
 
+export function getBundledTypeScriptVersion(extension: vscode.Extension<unknown>): string | undefined {
+	const packageJSON = extension.packageJSON;
+	const bundledTypeScriptVersion: unknown = packageJSON?.bundledTypeScriptVersion;
+	if (typeof bundledTypeScriptVersion === 'string') {
+		return bundledTypeScriptVersion;
+	}
+	const extensionVersion: unknown = packageJSON?.version;
+	return typeof extensionVersion === 'string' ? extensionVersion : undefined;
+}
+
 export function readLanguageServerPreference(): LanguageServerPreference {
 	const preference = readUnifiedConfig<LanguageServerPreference>(languageServerPreferenceConfig, 'auto', { fallbackSection: 'typescript' });
 	if (preference === 'auto' || preference === 'preferTsserver' || preference === 'preferLsp') {

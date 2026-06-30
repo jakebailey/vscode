@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { getEffectiveTsNativeExtension, IJsTsServerSelectionService, LanguageServerPreference } from '../tsServer/serverSelectionTypes';
+import { getBundledTypeScriptVersion, getEffectiveTsNativeExtension, IJsTsServerSelectionService, LanguageServerPreference } from '../tsServer/serverSelectionTypes';
 import TypeScriptServiceClientHost from '../typeScriptServiceClientHost';
 import { Lazy } from '../utils/lazy';
 import { Command } from './commandManager';
@@ -51,7 +51,7 @@ export class SelectTypeScriptVersionCommand implements Command {
 			},
 			{
 				label: (currentPreference === 'preferLsp' ? '• ' : '') + vscode.l10n.t("Prefer Native TypeScript Server"),
-				description: nativeExtension?.packageJSON?.version ?? vscode.l10n.t("Native"),
+				description: nativeExtension ? getBundledTypeScriptVersion(nativeExtension) : vscode.l10n.t("Native"),
 				preference: 'preferLsp',
 			},
 		];
