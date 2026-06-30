@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import { readUnifiedConfig } from '../utils/configuration';
 
 export const tsNativeExtensionId = 'typescriptteam.vscode-typescript';
-export const legacyTsNativeExtensionId = 'typescriptteam.native-preview';
+export const tsNativeNightlyExtensionId = 'typescriptteam.native-preview';
 export const languageServerPreferenceConfig = 'languageServer.preference';
 export const useWorkspaceTsdkStorageKey = 'typescript.useWorkspaceTsdk';
 
@@ -31,7 +31,11 @@ export interface IJsTsServerSelectionService {
 }
 
 export function getTsNativeExtension(): vscode.Extension<unknown> | undefined {
-	return vscode.extensions.getExtension(tsNativeExtensionId) ?? vscode.extensions.getExtension(legacyTsNativeExtensionId);
+	return vscode.extensions.getExtension(tsNativeExtensionId) ?? vscode.extensions.getExtension(tsNativeNightlyExtensionId);
+}
+
+export function getEffectiveTsNativeExtension(): vscode.Extension<unknown> | undefined {
+	return vscode.extensions.getExtension(tsNativeNightlyExtensionId) ?? vscode.extensions.getExtension(tsNativeExtensionId);
 }
 
 export function readLanguageServerPreference(): LanguageServerPreference {

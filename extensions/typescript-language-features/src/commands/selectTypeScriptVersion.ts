@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { IJsTsServerSelectionService, LanguageServerPreference } from '../tsServer/serverSelectionTypes';
+import { getEffectiveTsNativeExtension, IJsTsServerSelectionService, LanguageServerPreference } from '../tsServer/serverSelectionTypes';
 import TypeScriptServiceClientHost from '../typeScriptServiceClientHost';
 import { Lazy } from '../utils/lazy';
 import { Command } from './commandManager';
@@ -37,6 +37,7 @@ export class SelectTypeScriptVersionCommand implements Command {
 		}
 
 		const currentPreference = this.serverSelectionService.selection.preference;
+		const nativeExtension = getEffectiveTsNativeExtension();
 		const items: PreferencePick[] = [
 			{
 				label: (currentPreference === 'auto' ? '• ' : '') + vscode.l10n.t("Use VS Code's Default"),
@@ -50,7 +51,7 @@ export class SelectTypeScriptVersionCommand implements Command {
 			},
 			{
 				label: (currentPreference === 'preferLsp' ? '• ' : '') + vscode.l10n.t("Prefer Native TypeScript Server"),
-				description: vscode.l10n.t("Native"),
+				description: nativeExtension?.packageJSON?.version ?? vscode.l10n.t("Native"),
 				preference: 'preferLsp',
 			},
 		];

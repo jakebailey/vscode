@@ -217,7 +217,7 @@ function classifyAbsoluteTsdk(absolutePath: string): JsTsServerKind | undefined 
 		return 'tsserver';
 	}
 
-	if (resolveTsgoPath(absolutePath)) {
+	if (resolveNativeServerPath(absolutePath)) {
 		return 'lsp';
 	}
 
@@ -250,26 +250,43 @@ function resolveTsdkPaths(tsdkPath: string): readonly string[] {
 	return [path.normalize(tsdkPath)];
 }
 
-function resolveTsgoPath(tsdkPath: string): string | undefined {
-	const executableName = `tsgo${process.platform === 'win32' ? '.exe' : ''}`;
-	const directExecutable = path.join(tsdkPath, executableName);
-	if (fs.existsSync(directExecutable)) {
-		return directExecutable;
+function resolveNativeServerPath(tsdkPath: string): string | undefined {
+	for (const executableName of nativeExecutableNames()) {
+		const directExecutable = path.join(tsdkPath, executableName);
+		if (fs.existsSync(directExecutable)) {
+			return directExecutable;
+		}
 	}
 
-	if (isNativePreviewPackage(tsdkPath)) {
-		const platformPackage = `native-preview-${process.platform}-${process.arch}`;
-		const packageExecutable = path.join(tsdkPath, '..', platformPackage, 'lib', executableName);
-		if (fs.existsSync(packageExecutable)) {
-			return packageExecutable;
-		}
+	const packageJson = readPackageJson(tsdkPath);
+	if (!packageJson?.name) {
+		return undefined;
+	}
+
+	const baseName = packageJson.name.startsWith('@') ? packageJson.name.split('/')[1] : packageJson.name;
+	if (baseName !== 'typescript' && baseName !== 'native-preview') {
+		return undefined;
+	}
+
+	const nodeModules = packageJson.name.startsWith('@')
+		? path.join(tsdkPath, '..', '..')
+		: path.join(tsdkPath, '..');
+	const expectedExecutable = baseName === 'typescript' ? nativeExecutableName('tsc') : nativeExecutableName('tsgo');
+	const platformPackage = path.join(nodeModules, '@typescript', `${baseName}-${process.platform}-${process.arch}`, 'lib');
+	const packageExecutable = path.join(platformPackage, expectedExecutable);
+	if (fs.existsSync(packageExecutable)) {
+		return packageExecutable;
 	}
 
 	return undefined;
 }
 
-function isNativePreviewPackage(tsdkPath: string): boolean {
-	return readPackageJson(tsdkPath)?.name === '@typescript/native-preview';
+function nativeExecutableNames(): readonly string[] {
+	return [nativeExecutableName('tsc'), nativeExecutableName('tsgo')];
+}
+
+function nativeExecutableName(baseName: 'tsc' | 'tsgo'): string {
+	return `${baseName}${process.platform === 'win32' ? '.exe' : ''}`;
 }
 
 function readPackageJson(packagePath: string): { name?: string } | undefined {

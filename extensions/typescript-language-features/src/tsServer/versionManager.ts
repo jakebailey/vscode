@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { TypeScriptServiceConfiguration } from '../configuration/configuration';
-import { getTsNativeExtension, readLanguageServerPreference, useWorkspaceTsdkStorageKey } from './serverSelectionTypes';
+import { getEffectiveTsNativeExtension, getTsNativeExtension, readLanguageServerPreference, useWorkspaceTsdkStorageKey } from './serverSelectionTypes';
 import { unifiedConfigSection } from '../utils/configuration';
 import { setImmediate } from '../utils/async';
 import { Disposable } from '../utils/dispose';
@@ -146,10 +146,11 @@ export class TypeScriptVersionManager extends Disposable {
 		}
 
 		const isUsingTsgo = readLanguageServerPreference() === 'preferLsp';
+		const effectiveNativeExtension = getEffectiveTsNativeExtension() ?? nativePreviewExtension;
 
 		return {
 			label: (isUsingTsgo ? '• ' : '') + vscode.l10n.t("Use TypeScript Native Preview (Experimental)"),
-			description: nativePreviewExtension.packageJSON.version,
+			description: effectiveNativeExtension.packageJSON.version,
 			run: async () => {
 				await vscode.workspace.getConfiguration(unifiedConfigSection).update('languageServer.preference', 'preferLsp', vscode.ConfigurationTarget.Global);
 			},

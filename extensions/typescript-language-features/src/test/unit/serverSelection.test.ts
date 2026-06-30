@@ -36,6 +36,15 @@ suite('serverSelection', () => {
 		assert.strictEqual(classifyTsdk(testDir), 'lsp');
 	});
 
+	test('classifies a typescript native package sdk', () => {
+		fs.writeFileSync(path.join(testDir, 'package.json'), JSON.stringify({ name: 'typescript' }));
+		const platformPackageDir = path.join(path.dirname(testDir), '@typescript', `typescript-${process.platform}-${process.arch}`, 'lib');
+		fs.mkdirSync(platformPackageDir, { recursive: true });
+		fs.writeFileSync(path.join(platformPackageDir, `tsc${process.platform === 'win32' ? '.exe' : ''}`), '');
+
+		assert.strictEqual(classifyTsdk(testDir), 'lsp');
+	});
+
 	test('does not classify an invalid sdk', () => {
 		assert.strictEqual(classifyTsdk(testDir), undefined);
 	});
