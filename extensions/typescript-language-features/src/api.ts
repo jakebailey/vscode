@@ -31,6 +31,6 @@ export function getExtensionApi(
 				return new ApiV0(onCompletionAccepted, pluginManager);
 			}
 			return undefined;
-		},
+		}
 	};
 }
