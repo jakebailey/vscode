@@ -83,7 +83,7 @@ export function activate(
 	);
 	context.subscriptions.push(serverRegistration);
 
-	return getExtensionApi(onCompletionAccepted.event, pluginManager, serverSelectionService);
+	return getExtensionApi(onCompletionAccepted.event, pluginManager);
 }
 
 export function deactivate() {
