@@ -4,7 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { getBundledTypeScriptVersion, getEffectiveTsNativeExtension, IJsTsServerSelectionService, LanguageServerPreference } from '../tsServer/serverSelectionTypes';
+import { getBundledTypeScriptVersion, getEffectiveTsNativeExtension, IJsTsServerSelectionService, LanguageServerPreference, tsNativeNightlyExtensionId } from '../tsServer/serverSelectionTypes';
+import { ITypeScriptVersionProvider } from '../tsServer/versionProvider';
 import TypeScriptServiceClientHost from '../typeScriptServiceClientHost';
 import { Lazy } from '../utils/lazy';
 import { Command } from './commandManager';
@@ -16,10 +17,11 @@ export class SelectTypeScriptVersionCommand implements Command {
 	public constructor(
 		private readonly lazyClientHost: Lazy<TypeScriptServiceClientHost> | undefined,
 		private readonly serverSelectionService?: IJsTsServerSelectionService,
+		private readonly versionProvider?: ITypeScriptVersionProvider,
 	) { }
 
 	public async execute(): Promise<void> {
-		if (!this.serverSelectionService || this.serverSelectionService.selection.kind === 'tsserver') {
+		if (!this.serverSelectionService || !this.versionProvider) {
 			this.lazyClientHost?.value.serviceClient.showVersionPicker();
 			return;
 		}
@@ -28,7 +30,7 @@ export class SelectTypeScriptVersionCommand implements Command {
 	}
 
 	private async showServerPreferencePicker(): Promise<void> {
-		if (!this.serverSelectionService) {
+		if (!this.serverSelectionService || !this.versionProvider) {
 			return;
 		}
 
@@ -37,21 +39,32 @@ export class SelectTypeScriptVersionCommand implements Command {
 		}
 
 		const currentPreference = this.serverSelectionService.selection.preference;
+		const versionProvider = this.versionProvider;
 		const nativeExtension = getEffectiveTsNativeExtension();
+		const nativeVersion = nativeExtension ? getBundledTypeScriptVersion(nativeExtension) : undefined;
+		const nativeLabel = nativeExtension?.id.toLowerCase() === tsNativeNightlyExtensionId ? vscode.l10n.t("TypeScript Nightly") : vscode.l10n.t("TypeScript 7");
+		const autoDescription = this.serverSelectionService.selection.source === 'bundled'
+			? this.serverSelectionService.selection.kind === 'lsp'
+				? nativeVersion
+				: versionProvider.defaultVersion.displayName
+			: this.serverSelectionService.selection.reason;
 		const items: PreferencePick[] = [
 			{
-				label: (currentPreference === 'auto' ? '• ' : '') + vscode.l10n.t("Use VS Code's Default"),
-				description: vscode.l10n.t("Auto"),
+				label: (currentPreference === 'auto' ? '• ' : '') + vscode.l10n.t("Auto"),
+				description: autoDescription,
+				detail: vscode.l10n.t("Uses the recommended TypeScript version"),
 				preference: 'auto',
 			},
 			{
-				label: (currentPreference === 'preferTsserver' ? '• ' : '') + vscode.l10n.t("Prefer TypeScript Server"),
-				description: vscode.l10n.t("Classic"),
+				label: (currentPreference === 'preferTsserver' ? '• ' : '') + vscode.l10n.t("Bundled"),
+				description: versionProvider.bundledVersion.displayName,
+				detail: vscode.l10n.t("Built into VS Code"),
 				preference: 'preferTsserver',
 			},
 			{
-				label: (currentPreference === 'preferLsp' ? '• ' : '') + vscode.l10n.t("Prefer Native TypeScript Server"),
-				description: nativeExtension ? getBundledTypeScriptVersion(nativeExtension) : vscode.l10n.t("Native"),
+				label: (currentPreference === 'preferLsp' ? '• ' : '') + nativeLabel,
+				description: nativeVersion,
+				detail: nativeExtension?.id,
 				preference: 'preferLsp',
 			},
 		];

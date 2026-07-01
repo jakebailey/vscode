@@ -160,7 +160,7 @@ class JsTsServerRegistrationManager implements vscode.Disposable {
 function createNativeServerRegistration(serverSelectionService: JsTsServerSelectionService): vscode.Disposable {
 	const disposables = new DisposableStore();
 	const commandManager = disposables.add(new CommandManager());
-	commandManager.register(new SelectTypeScriptVersionCommand(undefined, serverSelectionService));
+	commandManager.register(new SelectTypeScriptVersionCommand(undefined, serverSelectionService, undefined));
 	commandManager.register(new DisableTsgoCommand());
 	return disposables;
 }
@@ -196,7 +196,7 @@ function createTsServerRegistration(
 		return disposables.add(clientHost);
 	});
 
-	registerBaseCommands(commandManager, lazyClientHost, pluginManager, activeJsTsEditorTracker, serverSelectionService);
+	registerBaseCommands(commandManager, lazyClientHost, pluginManager, activeJsTsEditorTracker, serverSelectionService, versionProvider);
 
 	import('./task/taskProvider').then(module => {
 		disposables.add(module.register(new Lazy(() => lazyClientHost.value.serviceClient)));

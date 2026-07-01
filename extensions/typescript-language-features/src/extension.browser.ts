@@ -114,7 +114,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 		onCompletionAccepted.fire(item);
 	});
 
-	registerBaseCommands(commandManager, lazyClientHost, pluginManager, activeJsTsEditorTracker, serverSelectionService);
+	registerBaseCommands(commandManager, lazyClientHost, pluginManager, activeJsTsEditorTracker, serverSelectionService, versionProvider);
 
 	// context.subscriptions.push(task.register(lazyClientHost.map(x => x.serviceClient)));
 
