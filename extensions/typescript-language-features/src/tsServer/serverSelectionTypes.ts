@@ -30,8 +30,13 @@ export interface IJsTsServerSelectionService {
 	setPreference(preference: LanguageServerPreference): Thenable<void>;
 }
 
+export interface ITypeScriptNativeServerApi {
+	start(selection: JsTsServerSelection): Thenable<void>;
+	stop(): Thenable<void>;
+}
+
 export function getTsNativeExtension(): vscode.Extension<unknown> | undefined {
-	return vscode.extensions.getExtension(tsNativeExtensionId) ?? vscode.extensions.getExtension(tsNativeNightlyExtensionId);
+	return vscode.extensions.getExtension(tsNativeExtensionId);
 }
 
 export function getEffectiveTsNativeExtension(): vscode.Extension<unknown> | undefined {
